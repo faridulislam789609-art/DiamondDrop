@@ -1,0 +1,6 @@
+{
+  "name": "DiamondDrop",
+  "description": "Daily activity and ticket rewards platform for Free Fire diamond giveaways.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

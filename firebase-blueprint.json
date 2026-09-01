@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "entities": {
+    "UserProfile": {
+      "collection": "users",
+      "fields": {
+        "uid": { "type": "string", "description": "Firebase user authentication UID" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "email": { "type": "string", "description": "User email address" },
+        "photoURL": { "type": "string", "description": "Avatar photo URL" },
+        "createdAt": { "type": "timestamp", "description": "Account registration timestamp" },
+        "lastLoginAt": { "type": "timestamp", "description": "Last login timestamp" },
+        "tickets": { "type": "number", "description": "All-time accumulated ticket balance" },
+        "weeklyTickets": { "type": "number", "description": "Current active weekly round tickets" },
+        "currentStreak": { "type": "number", "description": "Consecutive days checked in" },
+        "longestStreak": { "type": "number", "description": "Longest consecutive streak recorded" },
+        "lastCheckInDate": { "type": "string", "nullable": true, "description": "Date string of last claimed check-in" },
+        "lastQuizDate": { "type": "string", "nullable": true, "description": "Date string of last completed quiz" },
+        "lastQuizRewardDate": { "type": "string", "nullable": true, "description": "Date string of last claimed quiz reward" },
+        "freeFireUid": { "type": "string", "description": "Free Fire Player UID" },
+        "inGameName": { "type": "string", "description": "Free Fire in-game name" },
+        "region": { "type": "string", "description": "Free Fire server region" },
+        "role": { "type": "string", "description": "User permission role" },
+        "lastStreakBonusStreak": { "type": "number", "nullable": true, "description": "Streak count when last bonus was awarded" },
+        "lastStreakBonusAt": { "type": "timestamp", "nullable": true, "description": "Timestamp when 7-day bonus was claimed" },
+        "lastCheckInAt": { "type": "timestamp", "nullable": true, "description": "Timestamp when daily check-in was recorded" },
+        "lastQuizRewardAt": { "type": "timestamp", "nullable": true, "description": "Timestamp when quiz reward was awarded" }
+      }
+    },
+    "UserActivity": {
+      "collection": "users/{userId}/activity",
+      "fields": {
+        "type": { "type": "string", "description": "Activity action type: daily_checkin, daily_quiz, etc." },
+        "ticketsEarned": { "type": "number", "description": "Tickets awarded for this activity" },
+        "score": { "type": "number", "nullable": true, "description": "Quiz score achieved" },
+        "totalQuestions": { "type": "number", "nullable": true, "description": "Total quiz questions" },
+        "streak": { "type": "number", "nullable": true, "description": "User current streak at time of activity" },
+        "is7DayBonus": { "type": "boolean", "nullable": true, "description": "Whether 7 day bonus was included" },
+        "timestamp": { "type": "timestamp", "description": "Server timestamp of activity log" }
+      }
+    },
+    "WeeklyRound": {
+      "collection": "weeklyRounds",
+      "fields": {
+        "roundId": { "type": "string", "description": "Unique round identifier" },
+        "title": { "type": "string", "description": "Display title of the weekly campaign" },
+        "startAt": { "type": "string", "description": "ISO start date string of round" },
+        "endAt": { "type": "string", "description": "ISO end date string of round" },
+        "status": { "type": "string", "description": "Round status: open, closed, completed" },
+        "prizeDiamonds": { "type": "number", "description": "Diamonds awarded per winner (e.g. 100)" },
+        "maxWinners": { "type": "number", "description": "Maximum number of winners (fixed at 2)" },
+        "winnersCount": { "type": "number", "description": "Number of winners drawn" },
+        "deliveredCount": { "type": "number", "description": "Number of winners whose rewards are delivered" },
+        "createdAt": { "type": "timestamp", "description": "Round creation timestamp" },
+        "createdBy": { "type": "string", "description": "Admin UID who created the round" }
+      }
+    },
+    "WeeklyRoundWinner": {
+      "collection": "weeklyRounds/{roundId}/winners",
+      "fields": {
+        "uid": { "type": "string", "description": "Winner user UID" },
+        "displayName": { "type": "string", "description": "Winner display name" },
+        "email": { "type": "string", "description": "Winner email" },
+        "weeklyTickets": { "type": "number", "description": "Tickets at time of draw" },
+        "prizeDiamonds": { "type": "number", "description": "Prize diamonds amount" },
+        "selectedAt": { "type": "timestamp", "description": "Timestamp when winner was selected" },
+        "rewardStatus": { "type": "string", "description": "Reward status: awaiting_request, pending, approved, delivered" },
+        "deliveredAt": { "type": "timestamp", "nullable": true, "description": "Timestamp when reward was marked delivered" }
+      }
+    },
+    "RewardRequest": {
+      "collection": "rewardRequests",
+      "fields": {
+        "requestId": { "type": "string", "description": "Unique reward request ID" },
+        "uid": { "type": "string", "description": "Winner UID" },
+        "username": { "type": "string", "description": "Winner username/display name" },
+        "roundId": { "type": "string", "description": "Associated round ID" },
+        "freeFireUid": { "type": "string", "description": "Player Free Fire UID" },
+        "inGameName": { "type": "string", "description": "Player in-game name" },
+        "region": { "type": "string", "description": "Server region" },
+        "prizeDiamonds": { "type": "number", "description": "Reward diamond amount" },
+        "status": { "type": "string", "description": "Request status: pending, approved, delivered, rejected" },
+        "adminNote": { "type": "string", "nullable": true, "description": "Admin audit remarks" },
+        "transactionRef": { "type": "string", "nullable": true, "description": "Top-up transaction reference" },
+        "createdAt": { "type": "timestamp", "description": "Submission timestamp" },
+        "updatedAt": { "type": "timestamp", "description": "Last update timestamp" },
+        "deliveredAt": { "type": "timestamp", "nullable": true, "description": "Timestamp when delivered" }
+      }
+    }
+  }
+}
