@@ -6,7 +6,11 @@ export type TabType =
   | 'rewards'
   | 'rules'
   | 'profile'
-  | 'admin';
+  | 'admin'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'contact';
 
 export type UserRole = 'user' | 'admin';
 

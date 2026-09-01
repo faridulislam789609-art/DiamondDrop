@@ -129,9 +129,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const LOCAL_STORAGE_KEY_PREFIX = 'diamonddrop_v1_';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Tab State
-  const [activeTab, setActiveTabState] = useState<TabType>('home');
-
   // Firebase Auth State
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
@@ -173,6 +170,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   };
 
+  const VALID_TABS: TabType[] = [
+    'home',
+    'checkin',
+    'quiz',
+    'tickets',
+    'rewards',
+    'rules',
+    'profile',
+    'admin',
+    'about',
+    'privacy',
+    'terms',
+    'contact',
+  ];
+
+  // Tab State with initial hash detection
+  const getInitialTab = (): TabType => {
+    try {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase() as TabType;
+      if (VALID_TABS.includes(hash)) {
+        return hash;
+      }
+    } catch {
+      // Fallback
+    }
+    return 'home';
+  };
+
+  const [activeTab, setActiveTabState] = useState<TabType>(getInitialTab);
+
+  // Synchronize hash changes (e.g., browser back/forward buttons or direct URL)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase() as TabType;
+      if (VALID_TABS.includes(hash)) {
+        if (hash === 'admin' && user.role !== 'admin') {
+          setActiveTabState('home');
+          showToast('Access Denied: Admin authorization required');
+        } else {
+          setActiveTabState(hash);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } else if (!window.location.hash || window.location.hash === '#') {
+        setActiveTabState('home');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [user.role]);
+
   const setActiveTab = (tab: TabType) => {
     if (tab === 'admin' && user.role !== 'admin') {
       setActiveTabState('home');
@@ -180,6 +228,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setActiveTabState(tab);
+    try {
+      if (tab === 'home') {
+        if (window.location.hash) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } else {
+        window.location.hash = `#${tab}`;
+      }
+    } catch {
+      // Safe fallback
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Route protection guard: if user role is not admin, redirect to home

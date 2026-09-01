@@ -124,42 +124,52 @@ export const Footer: React.FC = () => {
           {/* Col 3: Guidelines & Legal */}
           <div>
             <h4 className="text-slate-200 font-bold font-gaming text-sm tracking-wider uppercase mb-3">
-              Fair Play & Rules
+              Guidelines & Legal
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <button
+                  onClick={() => setActiveTab('about')}
+                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                >
+                  <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                  About Us
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => setActiveTab('rules')}
-                  className="hover:text-purple-400 transition-colors flex items-center gap-1"
+                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5"
                 >
                   <FileText className="w-3.5 h-3.5 text-purple-400" />
-                  Official Program Rules
+                  Reward Rules
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('rules')}
-                  className="hover:text-purple-400 transition-colors flex items-center gap-1"
+                  onClick={() => setActiveTab('privacy')}
+                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-                  Anti-Cheat & Multi-Account Policy
+                  Privacy Policy
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('rules')}
-                  className="hover:text-purple-400 transition-colors flex items-center gap-1"
+                  onClick={() => setActiveTab('terms')}
+                  className="hover:text-purple-400 transition-colors flex items-center gap-1.5"
                 >
-                  <HelpCircle className="w-3.5 h-3.5 text-purple-400" />
-                  Frequently Asked Questions (FAQ)
+                  <Lock className="w-3.5 h-3.5 text-purple-400" />
+                  Terms & Conditions
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveTab('profile')}
-                  className="hover:text-purple-400 transition-colors"
+                  onClick={() => setActiveTab('contact')}
+                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
-                  Privacy & Data Management
+                  <Mail className="w-3.5 h-3.5 text-cyan-400" />
+                  Contact Us
                 </button>
               </li>
             </ul>
@@ -168,19 +178,26 @@ export const Footer: React.FC = () => {
           {/* Col 4: Support & Contact */}
           <div>
             <h4 className="text-slate-200 font-bold font-gaming text-sm tracking-wider uppercase mb-3">
-              Support & Community
+              Support & Inquiries
             </h4>
             <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-              Have questions about your tickets, winner verification, or reward delivery status?
+              Have questions about your tickets, winner verification, data deletion, or business inquiries?
             </p>
             <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-slate-300 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
-                <Mail className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span className="truncate">support@diamonddrop.mock</span>
-              </div>
-              <p className="text-[11px] text-slate-500">
-                Response time: 24-48 business hours
-              </p>
+              <button
+                onClick={() => setActiveTab('contact')}
+                className="w-full flex items-center gap-2 text-slate-300 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 hover:border-cyan-500/40 hover:text-white transition-all text-left group"
+              >
+                <Mail className="w-4 h-4 text-cyan-400 shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="truncate text-xs">Support contact coming soon</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('contact')}
+                className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1"
+              >
+                <span>Open Contact & Helpdesk Form</span>
+                <span>→</span>
+              </button>
             </div>
           </div>
         </div>
@@ -192,24 +209,32 @@ export const Footer: React.FC = () => {
             Official Platform Disclaimer
           </div>
           <p className="leading-relaxed">
-            <strong>DiamondDrop</strong> is an independent rewards platform and is not affiliated with, sponsored by, or endorsed by <strong>Garena</strong> or <strong>Free Fire</strong>. All game trademarks, character names, and assets remain the property of their respective copyright holders. Diamonds are procured through authorized distribution channels and gifted to verified community winners at no charge.
+            DiamondDrop is an independent rewards platform and is not affiliated with, sponsored by, endorsed by, or operated by Garena or Free Fire.
           </p>
         </div>
 
         {/* Bottom Copyright */}
         <div className="mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© 2026 DiamondDrop. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-xs">
-            <button onClick={() => setActiveTab('rules')} className="hover:text-slate-300">
-              Rules
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs">
+            <button onClick={() => setActiveTab('about')} className="hover:text-slate-300 transition-colors">
+              About Us
             </button>
             <span>•</span>
-            <button onClick={() => setActiveTab('rules')} className="hover:text-slate-300">
+            <button onClick={() => setActiveTab('privacy')} className="hover:text-slate-300 transition-colors">
               Privacy Policy
             </button>
             <span>•</span>
-            <button onClick={() => setActiveTab('rules')} className="hover:text-slate-300">
-              Terms of Service
+            <button onClick={() => setActiveTab('terms')} className="hover:text-slate-300 transition-colors">
+              Terms & Conditions
+            </button>
+            <span>•</span>
+            <button onClick={() => setActiveTab('rules')} className="hover:text-slate-300 transition-colors">
+              Reward Rules
+            </button>
+            <span>•</span>
+            <button onClick={() => setActiveTab('contact')} className="hover:text-slate-300 transition-colors">
+              Contact Us
             </button>
           </div>
         </div>

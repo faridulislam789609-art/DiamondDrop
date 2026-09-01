@@ -17,6 +17,10 @@ import { WeeklyRewardsView } from './views/WeeklyRewardsView';
 import { RulesView } from './views/RulesView';
 import { ProfileView } from './views/ProfileView';
 import { AdminView } from './views/AdminView';
+import { AboutView } from './views/AboutView';
+import { PrivacyPolicyView } from './views/PrivacyPolicyView';
+import { TermsView } from './views/TermsView';
+import { ContactView } from './views/ContactView';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useApp();
@@ -39,6 +43,14 @@ const MainContent: React.FC = () => {
         return <ProfileView />;
       case 'admin':
         return <AdminView />;
+      case 'about':
+        return <AboutView />;
+      case 'privacy':
+        return <PrivacyPolicyView />;
+      case 'terms':
+        return <TermsView />;
+      case 'contact':
+        return <ContactView />;
       default:
         return <HomeView />;
     }
