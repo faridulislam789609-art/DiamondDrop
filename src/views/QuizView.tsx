@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Brain,
-  Sparkles,
   CheckCircle2,
   XCircle,
   ArrowRight,
-  RotateCcw,
   Trophy,
   Ticket,
   HelpCircle,
@@ -13,26 +11,74 @@ import {
   Clock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { DAILY_QUIZ_QUESTIONS } from '../data/mockData';
+import { getDailyQuizQuestionsForUser } from '../utils/quizUtils';
+import { QuizQuestion } from '../types';
 
 export const QuizView: React.FC = () => {
-  const { user, canPlayQuizToday, submitQuizScore, setActiveTab } = useApp();
+  const { user, canPlayQuizToday, submitQuizScore, saveTodayQuizQuestions, setActiveTab } = useApp();
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Questions for today
+  const [dailyQuestions, setDailyQuestions] = useState<QuizQuestion[]>([]);
+  const [dailyQuestionIds, setDailyQuestionIds] = useState<number[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
-  const [isQuizCompleted, setIsQuizCompleted] = useState(false);
-  const [quizScore, setQuizScore] = useState<number>(0);
+  const [isQuizCompleted, setIsQuizCompleted] = useState(!canPlayQuizToday);
+  const [quizScore, setQuizScore] = useState<number>(user.lastQuizScore ?? 5);
   const [rewardStatus, setRewardStatus] = useState<{
     message: string;
     ticketsEarned: number;
     alreadyClaimed?: boolean;
   } | null>(null);
 
-  const currentQ = DAILY_QUIZ_QUESTIONS[currentQuestionIndex];
-  const progressPercent = ((currentQuestionIndex + 1) / DAILY_QUIZ_QUESTIONS.length) * 100;
+  useEffect(() => {
+    if (!canPlayQuizToday) {
+      setIsQuizCompleted(true);
+      if (typeof user.lastQuizScore === 'number') {
+        setQuizScore(user.lastQuizScore);
+      }
+      setIsLoadingQuestions(false);
+      return;
+    }
+
+    // Load today's questions (cached or newly picked avoiding recent 20)
+    const { questions, questionIds } = getDailyQuizQuestionsForUser(
+      user.firebaseUid || user.id,
+      todayStr,
+      user.recentQuizQuestionIds || [],
+      user.dailyQuizDate === todayStr ? user.dailyQuizQuestionIds : undefined
+    );
+
+    setDailyQuestions(questions);
+    setDailyQuestionIds(questionIds);
+    setIsLoadingQuestions(false);
+
+    // Sync question IDs for today to Firestore if not stored yet
+    if (user.dailyQuizDate !== todayStr && saveTodayQuizQuestions) {
+      saveTodayQuizQuestions(questionIds);
+    }
+  }, [
+    canPlayQuizToday,
+    user.firebaseUid,
+    user.id,
+    todayStr,
+    user.dailyQuizDate,
+    user.dailyQuizQuestionIds,
+    user.recentQuizQuestionIds,
+    user.lastQuizScore,
+    saveTodayQuizQuestions,
+  ]);
+
+  const currentQ = dailyQuestions[currentQuestionIndex];
+  const progressPercent = dailyQuestions.length > 0
+    ? ((currentQuestionIndex + 1) / dailyQuestions.length) * 100
+    : 0;
 
   const handleSelectOption = (index: number) => {
     if (showExplanation || isSubmitting) return;
@@ -45,19 +91,19 @@ export const QuizView: React.FC = () => {
   };
 
   const handleNextQuestion = async () => {
-    if (selectedOption === null || isSubmitting) return;
+    if (selectedOption === null || isSubmitting || !currentQ) return;
 
     const newAnswers = [...userAnswers, selectedOption];
     setUserAnswers(newAnswers);
     setSelectedOption(null);
     setShowExplanation(false);
 
-    if (currentQuestionIndex + 1 < DAILY_QUIZ_QUESTIONS.length) {
+    if (currentQuestionIndex + 1 < dailyQuestions.length) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
       // User has completed all 5 questions
       let calculatedScore = 0;
-      DAILY_QUIZ_QUESTIONS.forEach((q, idx) => {
+      dailyQuestions.forEach((q, idx) => {
         if (newAnswers[idx] === q.correctIndex) {
           calculatedScore++;
         }
@@ -67,7 +113,7 @@ export const QuizView: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-        const res = await submitQuizScore(calculatedScore, DAILY_QUIZ_QUESTIONS.length);
+        const res = await submitQuizScore(calculatedScore, dailyQuestions.length, dailyQuestionIds);
         setRewardStatus({
           message: res.message,
           ticketsEarned: res.ticketsEarned,
@@ -78,16 +124,6 @@ export const QuizView: React.FC = () => {
         setIsQuizCompleted(true);
       }
     }
-  };
-
-  const handleRestart = () => {
-    setCurrentQuestionIndex(0);
-    setSelectedOption(null);
-    setUserAnswers([]);
-    setShowExplanation(false);
-    setIsQuizCompleted(false);
-    setQuizScore(0);
-    setRewardStatus(null);
   };
 
   return (
@@ -105,22 +141,27 @@ export const QuizView: React.FC = () => {
           Answer 5 tactical questions to earn <strong className="text-cyan-300">+2 Tickets</strong> for this Sunday's diamond giveaway!
         </p>
         {!canPlayQuizToday && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Today's quiz reward already claimed. You can still practice!</span>
+            <span>Today's Quiz Completed (+2 Tickets Claimed)</span>
           </div>
         )}
       </div>
 
       {/* Main Card */}
       <div className="rounded-3xl glass-panel p-6 sm:p-8 border border-purple-500/30 bg-gradient-to-b from-[#0d122f]/95 to-[#080b1e]/98 shadow-2xl space-y-6">
-        {!isQuizCompleted ? (
+        {isLoadingQuestions ? (
+          <div className="py-12 flex flex-col items-center justify-center space-y-3 text-slate-400">
+            <Clock className="w-8 h-8 text-cyan-400 animate-spin" />
+            <p className="text-sm font-medium">Preparing today's tactical questions...</p>
+          </div>
+        ) : !isQuizCompleted && currentQ ? (
           <div className="space-y-6">
             {/* Progress Bar & Question Counter */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-400">
                 <span className="text-purple-300 uppercase tracking-wider font-gaming text-sm">
-                  Question {currentQuestionIndex + 1} of {DAILY_QUIZ_QUESTIONS.length}
+                  Question {currentQuestionIndex + 1} of {dailyQuestions.length}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-purple-950 border border-purple-500/30 text-purple-300 text-[11px]">
                   Category: {currentQ.category}
@@ -240,7 +281,7 @@ export const QuizView: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <span>{currentQuestionIndex + 1 === DAILY_QUIZ_QUESTIONS.length ? 'Submit Quiz & View Results' : 'Next Question'}</span>
+                      <span>{currentQuestionIndex + 1 === dailyQuestions.length ? 'Submit Quiz & View Results' : 'Next Question'}</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -249,7 +290,7 @@ export const QuizView: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Results Screen */
+          /* Results Screen - NO Practice Again button */
           <div id="quiz-results-screen" className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-200">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-cyan-500 to-purple-600 p-0.5 mx-auto shadow-2xl shadow-purple-500/30">
               <div className="w-full h-full rounded-[22px] bg-[#090d24] flex items-center justify-center">
@@ -280,7 +321,7 @@ export const QuizView: React.FC = () => {
                   <div className="text-sm font-bold text-white">
                     {rewardStatus?.ticketsEarned && rewardStatus.ticketsEarned > 0
                       ? 'Daily Quiz Completed — +2 Tickets'
-                      : rewardStatus?.message || "Today's quiz reward already claimed."}
+                      : rewardStatus?.message || 'Daily Quiz Completed — +2 Tickets'}
                   </div>
                 </div>
               </div>
@@ -289,22 +330,15 @@ export const QuizView: React.FC = () => {
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons: Single View Ticket Ledger Button */}
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <button
+                id="quiz-view-tickets-btn"
                 onClick={() => setActiveTab('tickets')}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-gaming text-sm font-bold tracking-wider shadow-lg active:scale-95 flex items-center gap-2"
               >
                 <Ticket className="w-4 h-4" />
                 <span>View Ticket Ledger</span>
-              </button>
-
-              <button
-                onClick={handleRestart}
-                className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-gaming text-sm font-semibold flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Practice Again</span>
               </button>
             </div>
           </div>
@@ -321,4 +355,3 @@ export const QuizView: React.FC = () => {
     </div>
   );
 };
-

@@ -26,6 +26,10 @@ export interface UserProfile {
   lastCheckInDate: string | null; // YYYY-MM-DD
   lastQuizDate: string | null;     // YYYY-MM-DD
   lastQuizRewardDate?: string | null; // YYYY-MM-DD
+  recentQuizQuestionIds?: number[]; // Latest up to 20 question IDs
+  dailyQuizQuestionIds?: number[]; // Today's 5 selected question IDs
+  dailyQuizDate?: string | null;    // Date for dailyQuizQuestionIds
+  lastQuizScore?: number;          // Today's or latest quiz score
   isWinnerThisWeek: boolean;
   role: UserRole;
   createdAt: string;

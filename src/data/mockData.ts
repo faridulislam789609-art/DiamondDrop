@@ -1,4 +1,7 @@
 import { UserProfile, WinnerRecord, DiamondRequest, ActivityHistoryItem, WeeklyRoundConfig, QuizQuestion, AppNotification } from '../types';
+import { QUIZ_QUESTION_BANK } from './quizQuestions';
+
+export { QUIZ_QUESTION_BANK };
 
 export const INITIAL_ROUND: WeeklyRoundConfig = {
   roundId: 'ROUND-48',

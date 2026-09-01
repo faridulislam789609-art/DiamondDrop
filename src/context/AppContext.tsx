@@ -79,7 +79,8 @@ interface AppContextType {
   canCheckInToday: boolean;
   canPlayQuizToday: boolean;
   claimDailyCheckIn: () => Promise<{ success: boolean; message: string; ticketsEarned: number; is7DayBonus?: boolean }>;
-  submitQuizScore: (score: number, totalQuestions: number) => Promise<{ success: boolean; ticketsEarned: number; message: string; alreadyClaimed?: boolean }>;
+  submitQuizScore: (score: number, totalQuestions: number, questionIds?: number[]) => Promise<{ success: boolean; ticketsEarned: number; message: string; alreadyClaimed?: boolean }>;
+  saveTodayQuizQuestions?: (questionIds: number[]) => Promise<void>;
 
   // Tickets & History
   activityHistory: ActivityHistoryItem[];
@@ -214,6 +215,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       lastCheckInDate: data?.lastCheckInDate || null,
       lastQuizDate: data?.lastQuizDate || null,
       lastQuizRewardDate: data?.lastQuizRewardDate || data?.lastQuizDate || null,
+      recentQuizQuestionIds: Array.isArray(data?.recentQuizQuestionIds) ? data.recentQuizQuestionIds : [],
+      dailyQuizQuestionIds: Array.isArray(data?.dailyQuizQuestionIds) ? data.dailyQuizQuestionIds : [],
+      dailyQuizDate: data?.dailyQuizDate || null,
+      lastQuizScore: typeof data?.lastQuizScore === 'number' ? data.lastQuizScore : undefined,
       isWinnerThisWeek: false,
       role: data?.role === 'admin' ? 'admin' : 'user', // strictly from Firestore users/{uid}.role
       createdAt: createdDateStr,
@@ -918,9 +923,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const saveTodayQuizQuestions = async (questionIds: number[]) => {
+    if (!firebaseUser || !isAuthenticated || !questionIds?.length) return;
+    const today = getTodayDateString();
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userDocRef, {
+        dailyQuizDate: today,
+        dailyQuizQuestionIds: questionIds,
+      });
+      setUser((prev) => ({
+        ...prev,
+        dailyQuizDate: today,
+        dailyQuizQuestionIds: questionIds,
+      }));
+    } catch (err) {
+      console.warn('Could not sync dailyQuizQuestionIds to Firestore:', err);
+    }
+  };
+
   const submitQuizScore = async (
     score: number,
-    totalQuestions: number
+    totalQuestions: number,
+    questionIds?: number[]
   ): Promise<{ success: boolean; ticketsEarned: number; message: string; alreadyClaimed?: boolean }> => {
     if (!isAuthenticated || !firebaseUser) {
       setAuthModalOpen(true);
@@ -949,6 +974,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ticketsEarned: 0,
             newTotalTickets: typeof data.tickets === 'number' ? Math.max(0, data.tickets) : 0,
             newWeeklyTickets: typeof data.weeklyTickets === 'number' ? Math.max(0, data.weeklyTickets) : 0,
+            updatedRecent: Array.isArray(data.recentQuizQuestionIds) ? data.recentQuizQuestionIds : [],
           };
         }
 
@@ -959,12 +985,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newTotalTickets = currentTickets + ticketsEarned;
         const newWeeklyTickets = currentWeekly + ticketsEarned;
 
+        const currentRecent: number[] = Array.isArray(data.recentQuizQuestionIds) ? data.recentQuizQuestionIds : [];
+        const newIdsToAdd: number[] = Array.isArray(questionIds) ? questionIds : [];
+        // Keep up to latest 20 unique question IDs
+        const updatedRecent = Array.from(new Set([...currentRecent, ...newIdsToAdd])).slice(-20);
+
         const userUpdates: Record<string, any> = {
           tickets: newTotalTickets,
           weeklyTickets: newWeeklyTickets,
           lastQuizRewardDate: today,
           lastQuizDate: today,
           lastQuizRewardAt: serverTimestamp(),
+          recentQuizQuestionIds: updatedRecent,
+          dailyQuizDate: today,
+          dailyQuizQuestionIds: newIdsToAdd,
+          lastQuizScore: score,
         };
 
         transaction.update(userDocRef, userUpdates);
@@ -982,6 +1017,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ticketsEarned: 2,
           newTotalTickets,
           newWeeklyTickets,
+          updatedRecent,
         };
       });
 
@@ -1001,6 +1037,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         weeklyTickets: result.newWeeklyTickets,
         lastQuizDate: today,
         lastQuizRewardDate: today,
+        recentQuizQuestionIds: result.updatedRecent,
+        dailyQuizDate: today,
+        dailyQuizQuestionIds: questionIds || [],
+        lastQuizScore: score,
       }));
 
       const newActivity: ActivityHistoryItem = {
@@ -1455,6 +1495,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         canPlayQuizToday,
         claimDailyCheckIn,
         submitQuizScore,
+        saveTodayQuizQuestions,
         activityHistory,
         weeklyRound,
         previousWinners,
